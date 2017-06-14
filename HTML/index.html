@@ -1,13 +1,46 @@
 <!DOCTYPE html>
 <html lang="pt-br">
-  <head>
-    <meta charset="UTF-8">
 <head>
-  <body>
-    <h1>Bem vindo ao Jogo da Velha! </h1>
-    <p>Qual seu nome?</p>
-    <form id='inicio' action='/newplayer'>
-      <input type=text id='nome' onchange='keepCaption(this)'/>
-    </form>
-  </body>
-  </html>
+  <meta charset="UTF-8">
+  <link rel='stylesheet' type='text/css' href='css/m3.css'>
+</head>
+<body class='centered'>
+  <p class='title'> Bem vindo ao <br>    Jogo da Velha! </p>
+  <p class='label'>Qual seu nome?</p>
+  <input type=text id='player-name' style='text-align:center;font-size:150%;' onkeyup='this.value=this.value.toUpperCase();' onchange='newPlayer();'/>
+  <p id='player-msg' class='label' style='display:none;'> Você será o jogador:
+    <button id='player-button' class='gamebutton control' disabled='true'/> </button>
+  </p>
+</td></tr>
+</body>
+<script>
+function showPlayer(p){
+  var msg = document.getElementById('player-msg');
+  var b = document.getElementById('player-button');
+  b.appendChild(document.createTextNode(p));
+  msg.style.display='';
+}
+
+function newPlayer() {
+  var player_name = document.getElementById('player-name');
+  var xhr = new XMLHttpRequest();
+  xhr.open('POST', '/newplayer', true);
+
+  xhr.onload = function (e) {
+    if (xhr.status == 200) {
+      showPlayer(xhr.responseText);
+    } else {
+      alert(xhr.statusText);
+    }
+  }
+
+  xhr.onerror = function (e) {
+    console.error(xhr.statusText);
+  };
+
+  var j = {'player': player_name.value};
+  xhr.setRequestHeader('Content-Type', 'application/json;charset=UTF-8');
+  xhr.send(JSON.stringify(j));
+}
+</script>
+</html>

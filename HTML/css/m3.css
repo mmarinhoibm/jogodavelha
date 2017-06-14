@@ -1,4 +1,4 @@
-button.gamebutton {
+.gamebutton {
   box-shadow: 0 12px 16px 0 rgba(0,0,0,0.24), 0 17px 50px 0 rgba(0,0,0,0.19);
   background: gray;
   border: 2px solid white;
@@ -9,6 +9,11 @@ button.gamebutton {
   height: 70px;
 }
 
+.label {
+  font-family: verdana;
+  font-size: 200%;
+  padding: 20px 20px;
+}
 .centered {
   margin-right: auto;
   margin-left: auto;
@@ -47,6 +52,7 @@ p.title {
 body {
   text-align: center;
   width: 400px;
+  line-height: 1;
 }
 
 table.gameboard {
