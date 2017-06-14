@@ -1,39 +1,43 @@
-var gameControl;
-var gameboard;
-var gamedata;
+var gameboard = [];
 var move;
+var gamedata = {};
 
-gameControl.function newGame () {
+exports.getGame = function (){
+  return gamedata;
+}
+
+exports.newGame = function () {
+  gameboard = [['','',''],['','',''],['','','']];
+
   gamedata = {
     'state' : 0,
-    'playerX' : '';
-    'playerO' : '';
-    'last' : 'O';
-    'col' : -1;
-    'row' : -1;
-    'next' : 'X';
-    'count': 0;
+    'playerX' : '',
+    'playerO' : '',
+    'last' : 'O',
+    'col' : -1,
+    'row' : -1,
+    'next' : 'X',
+    'count': 0
   }
-  gameboard = [['','',''],['','',''],['','','']];
+  return gamedata;
 }
 
-gameControl.function waitMove(res,req){
-
+exports.newPlayer = function (name){
+  var r = '';
+  if (gamedata.playerX == '') {
+    gamedata.playerX = name;
+    r = 'X';
+  }
+  else if (gamedata.playerO == '') {
+    gamedata.playerO = name;
+    r = 'O';
+  }
+  return r;
 }
 
-gameControl.function newPlayer(player){
-  if (gamedata.playerX == '') gamedata.playerX = player;
-  else (gamedata.playerO == '') gamedata.playerX = player;
-  else return 'Error: already 2 players in the game.'; // Error: no space for new players
+exports.checkMove - function () {
+  if (gamedata.count <= 10) gamedata.move++;
+  else return 'Error: more than 9 moves.';
 
   return '';
-}
-
-gameControl.function checkMove() {
- if (gamedata.count <= 10) gamedata.move++;
- else return 'Error: more than 9 moves.';
-
-
-
- return '';
 }

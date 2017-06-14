@@ -9,11 +9,12 @@
   <p class='label'>Qual seu nome?</p>
   <input type=text id='player-name' style='text-align:center;font-size:150%;' onkeyup='this.value=this.value.toUpperCase();' onchange='newPlayer();'/>
   <p id='player-msg' class='label' style='display:none;'> Você será o jogador:
-    <button id='player-button' class='gamebutton control' disabled='true'/> </button>
+    <button id='player-button' class='gamebutton control' onclick="location.assign('jogo.html')"/> </button>
   </p>
 </td></tr>
 </body>
 <script>
+
 function showPlayer(p){
   var msg = document.getElementById('player-msg');
   var b = document.getElementById('player-button');
@@ -23,22 +24,23 @@ function showPlayer(p){
 
 function newPlayer() {
   var player_name = document.getElementById('player-name');
+  var j = {'player': player_name.value};
   var xhr = new XMLHttpRequest();
+
+  player_name.disabled = true;
+
   xhr.open('POST', '/newplayer', true);
 
   xhr.onload = function (e) {
-    if (xhr.status == 200) {
-      showPlayer(xhr.responseText);
-    } else {
-      alert(xhr.statusText);
-    }
-  }
+    if (xhr.status == 200) showPlayer(xhr.responseText);
+    else alert(xhr.statusText);
+  };
 
   xhr.onerror = function (e) {
+    alert(xhr.statusText);
     console.error(xhr.statusText);
   };
 
-  var j = {'player': player_name.value};
   xhr.setRequestHeader('Content-Type', 'application/json;charset=UTF-8');
   xhr.send(JSON.stringify(j));
 }
