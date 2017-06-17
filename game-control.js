@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 var gamedata_map = new Map();
 var pre_game = false;
 
@@ -29,8 +28,8 @@ exports.newGame = function () {
     ui_control : '',
   }
   gamedata.board = ['','','','','','','','',''];
-  gamedata.last_move = new Date.getTime();
-  gamedata.game_key = new Date.getTime();
+  gamedata.game_key = new Date().getTime();
+  gamedata.last_move = new Date().getTime();
   gamedata_map.set(gamedata.game_key, gamedata);
 
   return gamedata;
@@ -39,7 +38,7 @@ exports.newGame = function () {
 exports.newPlayer = function (player){
   var game_key = 0;
   if (!pre_game) {
-    pre_game = newGame();
+    pre_game = exports.newGame();
     pre_game.playerX_name = player.name;
     game_key = pre_game.game_key;
   } else {
@@ -57,11 +56,11 @@ exports.move = function (move) {
   var gameboard = gamedata.board;
   var winner = false;
 
-  gamedata.last_move = new Date.getTime();
+  gamedata.last_move = new Date().getTime();
 
   if (gamedata.count > 9) return 'Error: more than 9 moves.';
-  else if (move.count+1 != gamedata.count ) return 'Error: should be '+gamedata.count+'moves.';
-  else if (gameboard[pos] != '') return 'Error: position already played';
+  else if (move.count != gamedata.count+1 ) return 'Error: should be '+(gamedata.count+1)+' moves.';
+  else if (gameboard[move.pos] != '') return 'Error: position already played';
   else if (gamedata.next != move.player) return 'Error: should be player '+gamedata.next;
   else if (gamedata.state != 1) return 'Error: Wrong game state: '+gamedata.state;
 
@@ -94,48 +93,4 @@ exports.move = function (move) {
   }
 
   return false;
-=======
-var gameboard = [];
-var move;
-var gamedata = {};
-
-exports.getGame = function (){
-  return gamedata;
-}
-
-exports.newGame = function () {
-  gameboard = [['','',''],['','',''],['','','']];
-
-  gamedata = {
-    'state' : 0,
-    'playerX' : '',
-    'playerO' : '',
-    'last' : 'O',
-    'col' : -1,
-    'row' : -1,
-    'next' : 'X',
-    'count': 0
-  }
-  return gamedata;
-}
-
-exports.newPlayer = function (name){
-  var r = '';
-  if (gamedata.playerX == '') {
-    gamedata.playerX = name;
-    r = 'X';
-  }
-  else if (gamedata.playerO == '') {
-    gamedata.playerO = name;
-    r = 'O';
-  }
-  return r;
-}
-
-exports.checkMove - function () {
-  if (gamedata.count <= 10) gamedata.move++;
-  else return 'Error: more than 9 moves.';
-
-  return '';
->>>>>>> f034bf828c892342501bc869d1b68476317e7e5c
-}
+};

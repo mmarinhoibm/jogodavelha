@@ -5,7 +5,6 @@
   <link rel='stylesheet' type='text/css' href='css/m3.css'>
 </head>
 <body class='centered'>
-<<<<<<< HEAD
   <span id='error-message-area' style='display:none;'>
     <button id='error-message' class='error-message' onclick='location.reload();'>Error:</button>
   </span>
@@ -14,28 +13,15 @@
   <input type=text id='player-name' style='text-align:center;font-size:150%;' onkeyup='this.value=this.value.toUpperCase();' onchange='newPlayer();'/>
   <p id='player-msg' class='small-label' style='display:none;'> Você será o jogador:
     <button id='player-button' class='gamebutton control' onclick='location.assign("jogo.html");' disabled='true'> </button><br>
-=======
-  <p class='title'> Bem vindo ao <br>    Jogo da Velha! </p>
-  <p class='label'>Qual seu nome?</p>
-  <input type=text id='player-name' style='text-align:center;font-size:150%;' onkeyup='this.value=this.value.toUpperCase();' onchange='newPlayer();'/>
-  <p id='player-msg' class='label' style='display:none;'> Você será o jogador:
-    <button id='player-button' class='gamebutton control' onclick="location.assign('jogo.html')"/> </button>
->>>>>>> f034bf828c892342501bc869d1b68476317e7e5c
   </p>
-</td></tr>
 </body>
 <script>
 
-<<<<<<< HEAD
-function showPlayer(p) {
-=======
 function showPlayer(p){
->>>>>>> f034bf828c892342501bc869d1b68476317e7e5c
   var msg = document.getElementById('player-msg');
   var b = document.getElementById('player-button');
   b.appendChild(document.createTextNode(p));
   msg.style.display='';
-<<<<<<< HEAD
 };
 
 function whenError(msg) {
@@ -77,10 +63,12 @@ function newPlayer() {
 
   req.onload = function (e) {
     if (req.status == 200) {
-      showPlayer(req.responseText);
-      waitPlayer();
-    }   else whenError('Ocorreu um erro se juntar ao jogo. <br>'+req.responseText);
-
+      var gamedata = JSON.parse(req.responseText);
+      if (gamedata.playerX_name == player_name.value) {
+        showPlayer('X');
+        waitPlayer();
+      } else showPlayer('O');
+    } else whenError('Ocorreu um erro se juntar ao jogo. <br>'+req.responseText);
   };
 
   req.onerror = function (e) {
@@ -89,32 +77,6 @@ function newPlayer() {
 
   req.setRequestHeader('Content-Type','application/json;charset=UTF-8');
   req.send(JSON.stringify(j));
-
-=======
-}
-
-function newPlayer() {
-  var player_name = document.getElementById('player-name');
-  var j = {'player': player_name.value};
-  var xhr = new XMLHttpRequest();
-
-  player_name.disabled = true;
-
-  xhr.open('POST', '/newplayer', true);
-
-  xhr.onload = function (e) {
-    if (xhr.status == 200) showPlayer(xhr.responseText);
-    else alert(xhr.statusText);
-  };
-
-  xhr.onerror = function (e) {
-    alert(xhr.statusText);
-    console.error(xhr.statusText);
-  };
-
-  xhr.setRequestHeader('Content-Type', 'application/json;charset=UTF-8');
-  xhr.send(JSON.stringify(j));
->>>>>>> f034bf828c892342501bc869d1b68476317e7e5c
 }
 </script>
 </html>

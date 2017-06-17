@@ -59,7 +59,7 @@ app.get('/gamedata', function (req,res){
     game_event.removeAllListeners();
   }
   res.append('Content-Type', 'application/json');
-  res.status(200).send(gamecontrol.getGame());
+  res.status(200).send(JSON.stringify(gamecontrol.getGame()));
   res.end();
 });
 
