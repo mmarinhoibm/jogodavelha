@@ -1,0 +1,16 @@
+{
+  "name": "velha-m3",
+  "version": "1.0.0",
+  "description": "Jogo da Velha",
+  "main": "app.js",
+  "scripts": {
+    "start": "node app.js"
+  },
+  "author": "Marcelo M Marinho",
+  "license": "ISC",
+  "dependencies": {
+    "body-parser": "^1.17.2",
+    "express": "^4.15.3",
+    "express-session": "^1.15.3"
+  }
+}

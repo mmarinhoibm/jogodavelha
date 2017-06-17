@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang='pt-br'>
+<head>
+  <meta charset='UTF-8'>
+  <link rel='stylesheet' type='text/css' href='css/m3.css'>
+</head>
+<body class='centered'>
+  <p class='title'>Jogo da Velha</p>
+  <table id='tableboard' class='centered gameboard'>
+    <tr class='borderlines'>
+      <td class='borderlines'> <button class='gamebutton' id='c00' onclick='newPlay(this)'/>  </td>
+      <td class='borderlines'> <button class='gamebutton' id='c01' onclick='newPlay(this)'/>  </td>
+      <td> <button class='gamebutton' id='c02' onclick='newPlay(this)'/></td>
+    </tr>
+    <tr class='borderlines'>
+      <td class='borderlines'> <button class='gamebutton' id='c10' onclick='newPlay(this)'/> </td>
+      <td class='borderlines'> <button class='gamebutton' id='c11' onclick='newPlay(this)'/> </td>
+      <td> <button class='gamebutton' id='c12' onclick='newPlay(this)'/> </td>
+    </tr>
+    <tr>
+      <td class='borderlines' > <button class='gamebutton' id='c20' onclick='newPlay(this)'/> </td>
+      <td class='borderlines' > <button class='gamebutton' id='c21' onclick='newPlay(this)'/> </td>
+      <td> <button class='gamebutton' id='c22' onclick='newPlay(this)'/> </td>
+    </tr>
+  </table>
+  <button id='newgame' class='control' onclick='location.reload()'> Reiniciar </button>
+  <p class='centered' id='messages'></p>
+
+
+  <script>
+  var msg = document.getElementById('messages');
+  var prevPlay = 'O';
+  var nextPlay = 'X';
+  var gameboard = [ ['','',''],['','',''],['','',''] ];
+  var num_plays = 0;
+
+  document.addEventListener('finish',  function(){
+    buttons = document.getElementsByClassName('gamebutton');
+    for (var i = 0; i < buttons.length; i++) buttons[i].disabled = true;
+  });
+
+  function newPlay(elm) {
+    var winner = false;
+    var play = nextPlay;
+    var col = elm.id.substr(1,1);
+    var row  = elm.id.substr(2,1);
+    gameboard[col][row] = play;
+    elm.innerHTML = play;
+    elm.disabled = true;
+    elm.classList.add('played');
+    nextPlay = prevPlay;
+    prevPlay = play;
+
+    /* avalia se gameboard tem vencendor ou terminou */
+    for (var l = 0; l < 3 && !winner; l++)
+    if (gameboard[l][0] != '' && gameboard[l][0] == gameboard[l][1] && gameboard[l][1] == gameboard[l][2] && !winner) winner = gameboard[l][0];
+    else if (gameboard[0][l] != '' && gameboard[0][l] == gameboard[1][l] && gameboard[1][l] == gameboard[2][l] && !winner) winner = gameboard[0][l];
+
+    if (gameboard[0][0] != '' && gameboard[0][0] == gameboard[1][1] && gameboard[1][1] == gameboard[2][2] && !winner) winner = gameboard[0][0];
+    else if (gameboard[0][2] != '' && gameboard[0][2] == gameboard[1][1] && gameboard[1][1] == gameboard[2][0] && !winner) winner = gameboard[0][2];
+
+    if (winner){
+      msg.innerHTML = winner+' venceu! <br> Jogo finalizado. Clique em Reiniciar se quiser começar outro jogo.';
+      document.dispatchEvent(new Event('finish'));
+    } else if (++num_plays == 9){
+      msg.innerHTML =  'Deu velha. Clique em Reiniciar se quiser começar outro jogo.';
+      document.dispatchEvent(new Event('finish'));
+    }
+  }
+  </script>
+</body>
+</html>
