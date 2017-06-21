@@ -22,7 +22,7 @@ function showPlayer(p){
   var b = document.getElementById('player-button');
   b.appendChild(document.createTextNode(p));
   msg.style.display='';
-};
+}
 
 function whenError(msg) {
   console.error(msg);
@@ -31,6 +31,7 @@ function whenError(msg) {
   err_msg.innerHTML = '<b>'+msg+'</b><br>Clique para tentar novamente';
   err_area.style.display='';
 }
+
 function waitPlayer() {
   var req = new XMLHttpRequest();
   req.open('GET', '/waitplayer', true);
@@ -54,29 +55,29 @@ function waitPlayer() {
 
 function newPlayer() {
   var player_name = document.getElementById('player-name');
-  var j = { 'player_name' : player_name.value };
+  var json_req = { 'player_name' : player_name.value };
   var req = new XMLHttpRequest();
-
   player_name.disabled = true;
 
-  req.open('POST', '/newplayer', true);
+  req.open('POST', '/player', true);
 
   req.onload = function (e) {
     if (req.status == 200) {
-      var gamedata = JSON.parse(req.responseText);
-      if (gamedata.playerX_name == player_name.value) {
+      var json_newplayer = JSON.parse(req.responseText);
+      alert (req.responseText);
+      if (json_newplayer.symbol == 'X') {
         showPlayer('X');
         waitPlayer();
       } else showPlayer('O');
-    } else whenError('Ocorreu um erro se juntar ao jogo. <br>'+req.responseText);
+    } else whenError('Ocorreu um erro se juntar ao jogo. <br>'+json_newplayer.message);
   };
 
   req.onerror = function (e) {
-    whenError('Ocorreu um erro se juntar ao jogo. <br>'+req.statusText);
+    whenError('Ocorreu um erro se juntar ao jogo. <br>'+req.responseText);
   };
 
   req.setRequestHeader('Content-Type','application/json;charset=UTF-8');
-  req.send(JSON.stringify(j));
+  req.send(JSON.stringify(json_req));
 }
 </script>
 </html>

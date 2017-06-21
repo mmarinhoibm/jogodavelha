@@ -5,68 +5,174 @@
   <link rel='stylesheet' type='text/css' href='css/m3.css'>
 </head>
 <body class='centered'>
+  <span id='error-message-area' style='display:none;'>
+    <button id='error-message' class='error-message' onclick='location.reload();'>Error:</button>
+  </span>
   <p class='title'>Jogo da Velha</p>
-  <table id='tableboard' class='centered gameboard'>
+  <table id='tableboard' class='gameboard'>
     <tr class='borderlines'>
-      <td class='borderlines'> <button class='gamebutton' id='c00' onclick='newPlay(this)'/>  </td>
-      <td class='borderlines'> <button class='gamebutton' id='c01' onclick='newPlay(this)'/>  </td>
-      <td> <button class='gamebutton' id='c02' onclick='newPlay(this)'/></td>
+      <td class='borderlines'> <button class='gamebutton' id='c00' onclick='makeMove(this)' data-position=0 />  </td>
+      <td class='borderlines'> <button class='gamebutton' id='c01' onclick='makeMove(this)' data-position=1 />  </td>
+      <td> <button class='gamebutton' id='c02' onclick='makeMove(this)' data-position=2 /></td>
     </tr>
     <tr class='borderlines'>
-      <td class='borderlines'> <button class='gamebutton' id='c10' onclick='newPlay(this)'/> </td>
-      <td class='borderlines'> <button class='gamebutton' id='c11' onclick='newPlay(this)'/> </td>
-      <td> <button class='gamebutton' id='c12' onclick='newPlay(this)'/> </td>
+      <td class='borderlines'> <button class='gamebutton' id='c10' onclick='makeMove(this)' data-position=3 /> </td>
+      <td class='borderlines'> <button class='gamebutton' id='c11' onclick='makeMove(this)' data-position=4 /> </td>
+      <td> <button class='gamebutton' id='c12' onclick='makeMove(this)' data-position=5 /> </td>
     </tr>
     <tr>
-      <td class='borderlines' > <button class='gamebutton' id='c20' onclick='newPlay(this)'/> </td>
-      <td class='borderlines' > <button class='gamebutton' id='c21' onclick='newPlay(this)'/> </td>
-      <td> <button class='gamebutton' id='c22' onclick='newPlay(this)'/> </td>
+      <td class='borderlines' > <button class='gamebutton' id='c20' onclick='makeMove(this)' data-position=6 /> </td>
+      <td class='borderlines' > <button class='gamebutton' id='c21' onclick='makeMove(this)' data-position=7 /> </td>
+      <td> <button class='gamebutton' id='c22' onclick='makeMove(this)' data-position=8 /> </td>
     </tr>
   </table>
-  <button id='newgame' class='control' onclick='location.reload()'> Reiniciar </button>
-  <p class='centered' id='messages'></p>
-
-
-  <script>
-  var msg = document.getElementById('messages');
-  var prevPlay = 'O';
-  var nextPlay = 'X';
-  var gameboard = [ ['','',''],['','',''],['','',''] ];
-  var num_plays = 0;
-
-  document.addEventListener('finish',  function(){
-    buttons = document.getElementsByClassName('gamebutton');
-    for (var i = 0; i < buttons.length; i++) buttons[i].disabled = true;
-  });
-
-  function newPlay(elm) {
-    var winner = false;
-    var play = nextPlay;
-    var col = elm.id.substr(1,1);
-    var row  = elm.id.substr(2,1);
-    gameboard[col][row] = play;
-    elm.innerHTML = play;
-    elm.disabled = true;
-    elm.classList.add('played');
-    nextPlay = prevPlay;
-    prevPlay = play;
-
-    /* avalia se gameboard tem vencendor ou terminou */
-    for (var l = 0; l < 3 && !winner; l++)
-    if (gameboard[l][0] != '' && gameboard[l][0] == gameboard[l][1] && gameboard[l][1] == gameboard[l][2] && !winner) winner = gameboard[l][0];
-    else if (gameboard[0][l] != '' && gameboard[0][l] == gameboard[1][l] && gameboard[1][l] == gameboard[2][l] && !winner) winner = gameboard[0][l];
-
-    if (gameboard[0][0] != '' && gameboard[0][0] == gameboard[1][1] && gameboard[1][1] == gameboard[2][2] && !winner) winner = gameboard[0][0];
-    else if (gameboard[0][2] != '' && gameboard[0][2] == gameboard[1][1] && gameboard[1][1] == gameboard[2][0] && !winner) winner = gameboard[0][2];
-
-    if (winner){
-      msg.innerHTML = winner+' venceu! <br> Jogo finalizado. Clique em Reiniciar se quiser começar outro jogo.';
-      document.dispatchEvent(new Event('finish'));
-    } else if (++num_plays == 9){
-      msg.innerHTML =  'Deu velha. Clique em Reiniciar se quiser começar outro jogo.';
-      document.dispatchEvent(new Event('finish'));
-    }
-  }
-  </script>
+  <table id='players-table' style='width:100%'>
+    <tr><td> <p id='messages'></p> </td>
+    </tr>
+    <tr id='this-payer-tr'><td> <p id='this-player-name' class='label'> <p> </td>
+      <td> <button class='gamebutton played' id='this-player-button' disabled=true /> </td>
+    </tr>
+    <tr id='adv-payer-tr'><td> <p id='adv-player-name' class='label'> <p> </td>
+      <td> <button class='gamebutton played' id='adv-player-button' disabled=true /> </td>
+    </tr>
+  </table>
 </body>
+
+<script>
+var msg = document.getElementById('messages');
+var gamedata = {};
+var locals = {};
+
+function whenError(msg) {
+  console.error(msg);
+  var err_area = document.getElementById('error-message-area');
+  var err_msg = document.getElementById('error-message');
+  err_msg.innerHTML = '<b>'+msg+'</b><br>Clique para tentar novamente';
+  err_area.style.display='';
+};
+
+function getPlayer (){
+  alert ('getPlayer');
+  var req = new XMLHttpRequest();
+  req.open('GET', '/player', true);
+  req.onload = function (e) {
+    alert ('getPlayer '+req.responseText);
+    if (req.status == 200){
+      json_res = JSON.parse(req.responseText);
+      locals.symbol = json_res.symbol;
+      locals.player_name = json_res.player_name;
+      alert ('getPlayer: '+JSON.stringify(locals));
+      document.dispatchEvent(new Event('player-load'));
+
+    }
+    else whenError('Ocorreu um erro ao carregar o jogador. <br>'+req.responseText);
+  }
+  req.send();
+}
+
+function getGamedata (){
+  var req = new XMLHttpRequest();
+  req.open('GET', '/gamedata', true);
+  req.onload = function (e) {
+    if (req.status == 200){
+      alert('getGamedata: '+req.responseText);
+      gamedata = JSON.parse(req.responseText);
+      document.dispatchEvent(new Event('gamedata-load'));
+    }
+    else whenError('Ocorreu um erro se juntar ao jogo. <br>'+req.responseText);
+  }
+  req.send();
+}
+
+
+function getMove () {
+  var req = new XMLHttpRequest();
+  req.open('GET', '/move', true);
+  req.onload = function (e) {
+    if (req.status == 200) {
+      alert('getMove: '+req.responseText);
+      gamedata = JSON.parse(req.responseText);
+      var b = document.getElementById(gamedata.ui_control);
+      b.innerHTML = gamedata.last;
+      var msg = document.getElementById('messages');
+      msg.innerHTML = 'Sua vez de jogar.'
+    } whenError('Ocorreu um erro na jogada realizada. <br>'+req.responseText);
+  }
+  req.send();
+}
+
+function makeMove(elm) {
+  alert(elm.dataset.position);
+  var req = new XMLHttpRequest();
+  var json_req = {
+    symbol : locals.symbol,
+    pos : elm.dataset.position,
+    control_id : elm.id
+  };
+
+  json_req.count = ++gamedata.count;
+  gamedata.board[json_req.pos] = locals.symbol;
+  elm.innerHTML = locals.symbol;
+  elm.disabled = true;
+  elm.classList.add('played');
+
+  req.open('POST', '/move', true);
+
+  req.onload = function () {
+    if (req.status == 200) {
+      alert('makeMove: '+req.responseText);
+      var json_res = JSON.parse(req.responseText);
+      if (json_res.state > 1) document.dispatchEvent(new Event('finish'));
+      else document.dispatchEvent(new Event('incoming-move'));
+    } else whenError('Ocorreu um erro nesta jogada. <br>'+req.responseText);
+  }
+  req.setRequestHeader('Content-Type','application/json;charset=UTF-8');
+  req.send(JSON.stringify(json_req));
+  var msg = document.getElementById('messages');
+  msg.innerHTML = 'Aguarde a jogada do seu adversário.'
+}
+
+document.addEventListener('gamedata-load',  function(){
+  getPlayer();
+});
+
+document.addEventListener('player-load',  function(){
+  var thisplayer = document.getElementById('this-player-name');
+  var b_thisplayer = document.getElementById('this-player-button');
+  var advplayer = document.getElementById('adv-player-name');
+  var b_advplayer = document.getElementById('adv-player-button');
+  var msg = document.getElementById('messages');
+
+  thisplayer.innerHTML = locals.player_name;
+  b_thisplayer.innerHTML = locals.symbol;
+
+  if (locals.symbol == 'X'){
+    advplayer.innerHTML = gamedata.playerO_name;
+    b_advplayer.innerHTML = 'O';
+    msg.innerHTML = 'Sua vez de jogar.'
+  } else {
+    advplayer.innerHTML = gamedata.playerX_name;
+    b_advplayer.innerHTML = 'X';
+    msg.innerHTML = 'Aguarde a jogada do seu adversário.'
+    getMove();
+  }
+});
+
+document.addEventListener('incoming-move',  function(){
+  getMove();
+});
+
+document.addEventListener('finish',  function(){
+  buttons = document.getElementsByClassName('gamebutton');
+  var msg = document.getElementById('messages');
+  for (var i = 0; i < buttons.length; i++) buttons[i].disabled = true;
+  if (gamedata.state == 2){
+    if (locals.symbol == gamedata.winner) msg.innerHTML = 'Você venceu! <br> Jogo finalizado. Clique em Reiniciar se quiser começar outro jogo.';
+    else msg.innerHTML = gamedata.winner+' venceu! <br> Jogo finalizado. Clique em Reiniciar se quiser começar outro jogo.';
+  } else {
+    msg.innerHTML =  'Deu velha. Clique em Reiniciar se quiser começar outro jogo.';
+  }
+});
+getGamedata();
+</script>
 </html>
