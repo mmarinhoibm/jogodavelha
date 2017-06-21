@@ -9,12 +9,8 @@
   "author": "Marcelo M Marinho",
   "license": "ISC",
   "dependencies": {
-    "body-parser": "^1.17.2",
-<<<<<<< HEAD
     "express": "^4.15.3",
+    "body-parser": "^1.17.2",
     "express-session": "^1.15.3"
-=======
-    "express": "^4.15.3"
->>>>>>> f034bf828c892342501bc869d1b68476317e7e5c
   }
 }
