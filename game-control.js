@@ -60,6 +60,7 @@ exports.newPlayer = function (player){
 
 exports.move = function (move) {
   var json_res = {success : false};
+  console.log('move '+JSON.stringify(move));
   // check move data for inconsistences
   var gamedata = gamedata_map.get(move.game_key);
   var gameboard = gamedata.board;
@@ -77,11 +78,11 @@ exports.move = function (move) {
     gameboard[move.pos] = move.symbol;
     gamedata.next = gamedata.last;
     gamedata.last = move.symbol;
-    gamedata.ui_control = move.control_id;
+    gamedata.ui_control = move.ui_control;
     gamedata.count++;
     json_res.success = true;
     json_res.next = gamedata.next;
-
+    json_res.ui_control = move.ui_control;
     // check gamedata.board for winner or a tie
     // verticals and horizontals
     for (var l = 0; l < 3 && !winner; l++)
@@ -90,7 +91,7 @@ exports.move = function (move) {
 
     // diagonals
     if (gameboard[0] != '' && gameboard[0] == gameboard[4] && gameboard[0] == gameboard[8] && !winner) winner = gameboard[0];
-    else if (gameboard[2] != '' && gameboard[2] == gameboard[4] && gameboard[2] == gameboard[3] && !winner) winner = gameboard[2];
+    else if (gameboard[2] != '' && gameboard[2] == gameboard[4] && gameboard[2] == gameboard[6] && !winner) winner = gameboard[2];
 
     if (winner) {
       gamedata.state = 2; // finished with a winner

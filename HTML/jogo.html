@@ -52,18 +52,17 @@ function whenError(msg) {
 };
 
 function getPlayer (){
-  alert ('getPlayer');
+  // alert ('getPlayer');
   var req = new XMLHttpRequest();
   req.open('GET', '/player', true);
   req.onload = function (e) {
-    alert ('getPlayer '+req.responseText);
+    // alert ('getPlayer '+req.responseText);
     if (req.status == 200){
       json_res = JSON.parse(req.responseText);
       locals.symbol = json_res.symbol;
       locals.player_name = json_res.player_name;
-      alert ('getPlayer: '+JSON.stringify(locals));
+      // alert ('getPlayer: '+JSON.stringify(locals));
       document.dispatchEvent(new Event('player-load'));
-
     }
     else whenError('Ocorreu um erro ao carregar o jogador. <br>'+req.responseText);
   }
@@ -75,7 +74,7 @@ function getGamedata (){
   req.open('GET', '/gamedata', true);
   req.onload = function (e) {
     if (req.status == 200){
-      alert('getGamedata: '+req.responseText);
+      // alert('getGamedata: '+req.responseText);
       gamedata = JSON.parse(req.responseText);
       document.dispatchEvent(new Event('gamedata-load'));
     }
@@ -84,25 +83,30 @@ function getGamedata (){
   req.send();
 }
 
-
 function getMove () {
   var req = new XMLHttpRequest();
   req.open('GET', '/move', true);
   req.onload = function (e) {
     if (req.status == 200) {
-      alert('getMove: '+req.responseText);
+      // alert('getMove: '+req.responseText);
       gamedata = JSON.parse(req.responseText);
       var b = document.getElementById(gamedata.ui_control);
       b.innerHTML = gamedata.last;
-      var msg = document.getElementById('messages');
       msg.innerHTML = 'Sua vez de jogar.'
-    } whenError('Ocorreu um erro na jogada realizada. <br>'+req.responseText);
+      b.disabled = true;
+      b.classList.add('played');
+    }
+    else whenError('Ocorreu um erro na jogada realizada. <br>'+req.responseText);
   }
   req.send();
 }
 
 function makeMove(elm) {
-  alert(elm.dataset.position);
+  if (locals.symbol != gamedata.next) {
+    alert ('Aguarde sua vez!');
+    return;
+  }
+  // alert(elm.dataset.position);
   var req = new XMLHttpRequest();
   var move_obj = {
     symbol : locals.symbol,
@@ -120,9 +124,9 @@ function makeMove(elm) {
 
   req.onload = function () {
     if (req.status == 200) {
-      alert('makeMove: '+req.responseText);
-      var json_res = JSON.parse(req.responseText);
-      if (json_res.state > 1) document.dispatchEvent(new Event('finish'));
+      // alert('makeMove: '+req.responseText);
+      var move_res_obj = JSON.parse(req.responseText);
+      if (move_res_obj.state > 1) document.dispatchEvent(new Event('finish'));
       else document.dispatchEvent(new Event('incoming-move'));
     } else whenError('Ocorreu um erro nesta jogada. <br>'+req.responseText);
   }

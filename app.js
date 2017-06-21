@@ -43,7 +43,7 @@ app.get('/move', function (req,res){
     waitmove.res.append('Content-Type', 'application/json');
     waitmove.res.status(200).send(move_obj);
     waitmove.res.end();
-  })
+  });
 });
 
 // return game data after last move
