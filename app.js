@@ -16,20 +16,20 @@ app.use(sessions({ secret : 'this should not be here', resave : true, saveUninit
 
 // receive a move from a player
 app.post('/move', function (req,res){
-  console.log('move: '+ req.body.pos+req.body.symbol+req.body.count,req.body.control_id);
-  var move_obj = gamecontrol.move( {
+  console.log('move: '+ req.body.pos+req.body.symbol+req.body.count);
+  var move_obj = gamecontrol.move({
     game_key : req.session.game_key,
     pos : req.body.pos,
     count : req.body.count,
-    symbol : req.body.symbol,
-    ui_control : req.body.control_id
+    symbol : req.body.symbol
   });
+  console.log('move RES: '+JSON.stringify(move_obj));
+
   res.append('Content-Type', 'application/json');
   if (move_obj.success) {
-    res.status(200).send(move_obj);
+    res.status(200).send(JSON.stringify(gamecontrol.getGame(req.session.game_key)));
     game_event.emit('move-'+req.session.game_key);
-  }
-  else res.status(400).send(move_obj);
+  } else res.status(400).send(move_obj);
   res.end();
 });
 
@@ -38,10 +38,9 @@ app.get('/move', function (req,res){
   waitmove.res = res;
   waitmove.session = req.session;
   game_event.once('move-'+req.session.game_key, function () {
-    var move_obj = gamecontrol.getGame(waitmove.session.game_key);
-    console.log('GET move res: '+JSON.stringify(move_obj));
+    console.log('GET move res: '+JSON.stringify(waitmove.session.game_key));
     waitmove.res.append('Content-Type', 'application/json');
-    waitmove.res.status(200).send(move_obj);
+    waitmove.res.status(200).send(JSON.stringify(gamecontrol.getGame(waitmove.session.game_key)));
     waitmove.res.end();
   });
 });

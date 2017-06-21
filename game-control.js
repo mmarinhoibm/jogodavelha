@@ -21,11 +21,9 @@ exports.newGame = function () {
     playerX_name : '',
     playerO_name : '',
     last : 'O',
-    pos: 0,
     next : 'X',
     count: 0,
     winner: '',
-    ui_control : '',
   }
   gamedata.board = ['','','','','','','','',''];
   gamedata.game_key = new Date().getTime();
@@ -59,7 +57,7 @@ exports.newPlayer = function (player){
 }
 
 exports.move = function (move) {
-  var json_res = {success : false};
+  var move_res = {success : false};
   console.log('move '+JSON.stringify(move));
   // check move data for inconsistences
   var gamedata = gamedata_map.get(move.game_key);
@@ -68,21 +66,17 @@ exports.move = function (move) {
 
   gamedata.last_move = new Date().getTime();
 
-  if (gamedata.count > 9) json_res.message = 'Error: more than 9 moves.';
-  else if (move.count != gamedata.count+1 ) json_res.message =  'Error: should be '+(gamedata.count+1)+' moves.';
-  else if (gameboard[move.pos] != '') json_res.message = 'Error: position already played';
-  else if (gamedata.next != move.symbol) json_res.message =  'Error: should be player '+gamedata.next;
-  else if (gamedata.state != 1) json_res.message = 'Error: Wrong game state: '+gamedata.state;
+  if (gamedata.count > 9) move_res.message = 'Error: more than 9 moves.';
+  else if (move.count != gamedata.count+1 ) move_res.message =  'Error: should be '+(gamedata.count+1)+' moves.';
+  else if (gameboard[move.pos] != '') move_res.message = 'Error: position already played';
+  else if (gamedata.next != move.symbol) move_res.message =  'Error: should be player '+gamedata.next;
+  else if (gamedata.state != 1) move_res.message = 'Error: Wrong game state: '+gamedata.state;
   // move is ok
   else {
     gameboard[move.pos] = move.symbol;
     gamedata.next = gamedata.last;
     gamedata.last = move.symbol;
-    gamedata.ui_control = move.ui_control;
     gamedata.count++;
-    json_res.success = true;
-    json_res.next = gamedata.next;
-    json_res.ui_control = move.ui_control;
     // check gamedata.board for winner or a tie
     // verticals and horizontals
     for (var l = 0; l < 3 && !winner; l++)
@@ -96,12 +90,14 @@ exports.move = function (move) {
     if (winner) {
       gamedata.state = 2; // finished with a winner
       gamedata.winner = winner;
+      console.log('winner: '+winner);
     }
     else if (gamedata.count == 9){
       gamedata.state = 3;  // it is a tie
       gamedata.winner =  'Nobody.';
+      console.log('winner: '+winner);
     }
-    json_res.state = gamedata.state;
+    move_res.success = true;
   }
-  return json_res;
+  return move_res;
 };

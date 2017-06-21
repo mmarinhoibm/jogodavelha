@@ -41,14 +41,98 @@
 <script>
 var msg = document.getElementById('messages');
 var gamedata = {};
-var locals = {};
+var player_obj = {};
 
 function whenError(msg) {
-  console.error(msg);
+  console.log(msg);
   var err_area = document.getElementById('error-message-area');
   var err_msg = document.getElementById('error-message');
   err_msg.innerHTML = '<b>'+msg+'</b><br>Clique para tentar novamente';
   err_area.style.display='';
+};
+
+function getMove () {
+  var req = new XMLHttpRequest();
+  req.open('GET', '/move', true);
+  req.onload = function (e) {
+    if (req.status == 200) {
+      // alert('getMove: '+req.responseText);
+      gamedata = JSON.parse(req.responseText);
+      showBoard();
+    }
+    else whenError('Ocorreu um erro na jogada realizada. <br>'+req.responseText);
+  }
+  req.send();
+}
+
+function makeMove(b) {
+  // alert(elm.dataset.position);
+  var req = new XMLHttpRequest();
+  var move_obj = {
+    symbol : player_obj.symbol,
+    pos : b.dataset.position,
+  };
+  move_obj.count = ++gamedata.count;
+
+  b.innerHTML = player_obj.symbol;
+  b.disabled = true;
+  b.classList.add('played');
+
+  req.open('POST', '/move', true);
+  req.setRequestHeader('Content-Type','application/json;charset=UTF-8');
+  req.onload = function () {
+    if (req.status == 200) {
+      // alert('makeMove: '+req.responseText);
+      gamedata = JSON.parse(req.responseText);
+      showBoard();
+      if (gamedata.state > 1) document.dispatchEvent(new Event('finish'));
+      else getMove();
+    } else whenError('Ocorreu um erro nesta jogada. <br>'+req.responseText);
+  }
+  req.send(JSON.stringify(move_obj));
+}
+
+document.addEventListener('finish',  function(){
+  buttons = document.getElementsByClassName('gamebutton');
+  for (var i = 0; i < buttons.length; i++) buttons[i].disabled = true;
+  if (gamedata.state == 2){
+    if (player_obj.symbol == gamedata.winner) msg.innerHTML = 'Você venceu! <br> Jogo finalizado. Clique em Reiniciar se quiser começar outro jogo.';
+    else msg.innerHTML = gamedata.winner+' venceu! <br> Jogo finalizado. Clique em Reiniciar se quiser começar outro jogo.';
+  } else msg.innerHTML =  'Deu velha. Clique em Reiniciar se quiser começar outro jogo.';
+});
+
+function showBoard(){
+  var not_my_turn = (gamedata.next != player_obj.symbol);
+  var buttons = document.getElementsByClassName('gamebutton');
+  for (i = 0; i < buttons.length; i++)
+  if (buttons[i].dataset.position != undefined) {
+    buttons[i].innerHTML = gamedata.board[buttons[i].dataset.position];
+    if (buttons[i].innerHTML != '') {
+      buttons[i].classList.add('played');
+      buttons[i].disabled = true;
+    } else buttons[i].disabled = not_my_turn;
+  }
+  if (not_my_turn) msg.innerHTML = 'Aguarde a jogada do seu adversário.';
+  else  msg.innerHTML = 'Agora é sua vez.';
+}
+
+function showPlayer(){
+  var thisplayer = document.getElementById('this-player-name');
+  var b_thisplayer = document.getElementById('this-player-button');
+  var advplayer = document.getElementById('adv-player-name');
+  var b_advplayer = document.getElementById('adv-player-button');
+
+  thisplayer.innerHTML = player_obj.player_name;
+  b_thisplayer.innerHTML = player_obj.symbol;
+
+  if (player_obj.symbol == 'X'){
+    advplayer.innerHTML = gamedata.playerO_name;
+    b_advplayer.innerHTML = 'O';
+  } else {
+    advplayer.innerHTML = gamedata.playerX_name;
+    b_advplayer.innerHTML = 'X';
+  }
+  showBoard();
 };
 
 function getPlayer (){
@@ -58,17 +142,17 @@ function getPlayer (){
   req.onload = function (e) {
     // alert ('getPlayer '+req.responseText);
     if (req.status == 200){
-      json_res = JSON.parse(req.responseText);
-      locals.symbol = json_res.symbol;
-      locals.player_name = json_res.player_name;
-      // alert ('getPlayer: '+JSON.stringify(locals));
-      document.dispatchEvent(new Event('player-load'));
+      player_obj = JSON.parse(req.responseText);
+      showPlayer();
+      getMove();
+      // alert ('getPlayer: '+JSON.stringify(player_obj));
     }
     else whenError('Ocorreu um erro ao carregar o jogador. <br>'+req.responseText);
   }
   req.send();
 }
 
+// load gamedata into variables and update all HTML Elements
 function getGamedata (){
   var req = new XMLHttpRequest();
   req.open('GET', '/gamedata', true);
@@ -76,121 +160,13 @@ function getGamedata (){
     if (req.status == 200){
       // alert('getGamedata: '+req.responseText);
       gamedata = JSON.parse(req.responseText);
-      document.dispatchEvent(new Event('gamedata-load'));
+      getPlayer();
     }
     else whenError('Ocorreu um erro se juntar ao jogo. <br>'+req.responseText);
   }
   req.send();
 }
-
-function getMove () {
-  var req = new XMLHttpRequest();
-  req.open('GET', '/move', true);
-  req.onload = function (e) {
-    if (req.status == 200) {
-      // alert('getMove: '+req.responseText);
-      gamedata = JSON.parse(req.responseText);
-      var b = document.getElementById(gamedata.ui_control);
-      b.innerHTML = gamedata.last;
-      msg.innerHTML = 'Sua vez de jogar.'
-      b.disabled = true;
-      b.classList.add('played');
-    }
-    else whenError('Ocorreu um erro na jogada realizada. <br>'+req.responseText);
-  }
-  req.send();
-}
-
-function makeMove(elm) {
-  if (locals.symbol != gamedata.next) {
-    alert ('Aguarde sua vez!');
-    return;
-  }
-  // alert(elm.dataset.position);
-  var req = new XMLHttpRequest();
-  var move_obj = {
-    symbol : locals.symbol,
-    pos : elm.dataset.position,
-    control_id : elm.id
-  };
-
-  move_obj.count = ++gamedata.count;
-  gamedata.board[move_obj.pos] = locals.symbol;
-  elm.innerHTML = locals.symbol;
-  elm.disabled = true;
-  elm.classList.add('played');
-
-  req.open('POST', '/move', true);
-
-  req.onload = function () {
-    if (req.status == 200) {
-      // alert('makeMove: '+req.responseText);
-      var move_res_obj = JSON.parse(req.responseText);
-      if (move_res_obj.state > 1) document.dispatchEvent(new Event('finish'));
-      else document.dispatchEvent(new Event('incoming-move'));
-    } else whenError('Ocorreu um erro nesta jogada. <br>'+req.responseText);
-  }
-  req.setRequestHeader('Content-Type','application/json;charset=UTF-8');
-  req.send(JSON.stringify(move_obj));
-  var msg = document.getElementById('messages');
-  msg.innerHTML = 'Aguarde a jogada do seu adversário.'
-}
-
-document.addEventListener('gamedata-load',  function(){
-  if (gamedata.count > 0){
-    var buttons = document.getElementsByClassName('gamebutton');
-    for (i = 0; i < buttons.length; i++)
-    if (buttons[i].dataset.position != undefined)
-    if (gamedata.board[buttons[i].dataset.position] != '') {
-      buttons[i].innerHTML = gamedata.board[buttons[i].dataset.position];
-      buttons[i].disabled = true;
-      buttons[i].classList.add('played');
-    }
-  }
-  if (locals.symbol == undefined) getPlayer();
-});
-
-document.addEventListener('player-load',  function(){
-  var thisplayer = document.getElementById('this-player-name');
-  var b_thisplayer = document.getElementById('this-player-button');
-  var advplayer = document.getElementById('adv-player-name');
-  var b_advplayer = document.getElementById('adv-player-button');
-  var msg = document.getElementById('messages');
-
-  thisplayer.innerHTML = locals.player_name;
-  b_thisplayer.innerHTML = locals.symbol;
-
-  if (locals.symbol == 'X'){
-    advplayer.innerHTML = gamedata.playerO_name;
-    b_advplayer.innerHTML = 'O';
-  } else {
-    advplayer.innerHTML = gamedata.playerX_name;
-    b_advplayer.innerHTML = 'X';
-  }
-  if (locals.symbol == gamedata.next) msg.innerHTML = 'Sua vez de jogar.';
-  else {
-    msg.innerHTML = 'Aguarde a jogada do seu adversário.'
-    getMove();
-  };
-});
-
-document.addEventListener('incoming-move',  function(){
-  getMove();
-});
-
-document.addEventListener('finish',  function(){
-  buttons = document.getElementsByClassName('gamebutton');
-  var msg = document.getElementById('messages');
-  for (var i = 0; i < buttons.length; i++) buttons[i].disabled = true;
-  if (gamedata.state == 2){
-    if (locals.symbol == gamedata.winner) msg.innerHTML = 'Você venceu! <br> Jogo finalizado. Clique em Reiniciar se quiser começar outro jogo.';
-    else msg.innerHTML = gamedata.winner+' venceu! <br> Jogo finalizado. Clique em Reiniciar se quiser começar outro jogo.';
-  } else {
-    msg.innerHTML =  'Deu velha. Clique em Reiniciar se quiser começar outro jogo.';
-  }
-});
-
-// load gamedata into variables and update all HTML Elements
+msg.innerHTML = 'Carregando o jogo...';
 getGamedata();
 
 </script>
