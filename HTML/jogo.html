@@ -104,14 +104,14 @@ function getMove () {
 function makeMove(elm) {
   alert(elm.dataset.position);
   var req = new XMLHttpRequest();
-  var json_req = {
+  var move_obj = {
     symbol : locals.symbol,
     pos : elm.dataset.position,
     control_id : elm.id
   };
 
-  json_req.count = ++gamedata.count;
-  gamedata.board[json_req.pos] = locals.symbol;
+  move_obj.count = ++gamedata.count;
+  gamedata.board[move_obj.pos] = locals.symbol;
   elm.innerHTML = locals.symbol;
   elm.disabled = true;
   elm.classList.add('played');
@@ -127,13 +127,23 @@ function makeMove(elm) {
     } else whenError('Ocorreu um erro nesta jogada. <br>'+req.responseText);
   }
   req.setRequestHeader('Content-Type','application/json;charset=UTF-8');
-  req.send(JSON.stringify(json_req));
+  req.send(JSON.stringify(move_obj));
   var msg = document.getElementById('messages');
   msg.innerHTML = 'Aguarde a jogada do seu adversário.'
 }
 
 document.addEventListener('gamedata-load',  function(){
-  getPlayer();
+  if (gamedata.count > 0){
+    var buttons = document.getElementsByClassName('gamebutton');
+    for (i = 0; i < buttons.length; i++)
+    if (buttons[i].dataset.position != undefined)
+    if (gamedata.board[buttons[i].dataset.position] != '') {
+      buttons[i].innerHTML = gamedata.board[buttons[i].dataset.position];
+      buttons[i].disabled = true;
+      buttons[i].classList.add('played');
+    }
+  }
+  if (locals.symbol == undefined) getPlayer();
 });
 
 document.addEventListener('player-load',  function(){
@@ -149,13 +159,15 @@ document.addEventListener('player-load',  function(){
   if (locals.symbol == 'X'){
     advplayer.innerHTML = gamedata.playerO_name;
     b_advplayer.innerHTML = 'O';
-    msg.innerHTML = 'Sua vez de jogar.'
   } else {
     advplayer.innerHTML = gamedata.playerX_name;
     b_advplayer.innerHTML = 'X';
+  }
+  if (locals.symbol == gamedata.next) msg.innerHTML = 'Sua vez de jogar.';
+  else {
     msg.innerHTML = 'Aguarde a jogada do seu adversário.'
     getMove();
-  }
+  };
 });
 
 document.addEventListener('incoming-move',  function(){
@@ -173,6 +185,9 @@ document.addEventListener('finish',  function(){
     msg.innerHTML =  'Deu velha. Clique em Reiniciar se quiser começar outro jogo.';
   }
 });
+
+// load gamedata into variables and update all HTML Elements
 getGamedata();
+
 </script>
 </html>

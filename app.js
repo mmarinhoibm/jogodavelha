@@ -17,7 +17,7 @@ app.use(sessions({ secret : 'this should not be here', resave : true, saveUninit
 // receive a move from a player
 app.post('/move', function (req,res){
   console.log('move: '+ req.body.pos+req.body.symbol+req.body.count,req.body.control_id);
-  var json_move = gamecontrol.move( {
+  var move_obj = gamecontrol.move( {
     game_key : req.session.game_key,
     pos : req.body.pos,
     count : req.body.count,
@@ -25,11 +25,11 @@ app.post('/move', function (req,res){
     ui_control : req.body.control_id
   });
   res.append('Content-Type', 'application/json');
-  if (json_move.success) {
-    res.status(200).send(json_move);
-    game_event.emit('move');
+  if (move_obj.success) {
+    res.status(200).send(move_obj);
+    game_event.emit('move-'+req.session.game_key);
   }
-  else res.status(400).send(json_move);
+  else res.status(400).send(move_obj);
   res.end();
 });
 
@@ -37,10 +37,11 @@ app.post('/move', function (req,res){
 app.get('/move', function (req,res){
   waitmove.res = res;
   waitmove.session = req.session;
-  game_event.once('move', function () {
-    var json_move = gamecontrol.getGame(waitmove.session.game_key);
+  game_event.once('move-'+req.session.game_key, function () {
+    var move_obj = gamecontrol.getGame(waitmove.session.game_key);
+    console.log('GET move res: '+JSON.stringify(move_obj));
     waitmove.res.append('Content-Type', 'application/json');
-    waitmove.res.status(200).send(json_move);
+    waitmove.res.status(200).send(move_obj);
     waitmove.res.end();
   })
 });
@@ -78,7 +79,7 @@ app.post('/player',function (req,res){
     req.session.game_key = json_res.game_key;
     req.session.symbol = json_res.symbol;
     req.session.player_name = req.body.player_name;
-    game_event.emit('newplayer');
+    game_event.emit('newplayer-'+json_res.game_key);
     res.status(200).send(json_res);
   } else res.status(400).send(json_res); // send error
   res.end();
@@ -86,18 +87,19 @@ app.post('/player',function (req,res){
 
 // wait for other player to join the game
 app.get('/waitplayer', function (req,res){
-  console.log('wait player: '+req.session.game_key);
-  if (gamecontrol.getGame(req.session.game_key).state == 1){
+  var gamedata = gamecontrol.getGame(req.session.game_key);
+  console.log('wait player: '+gamedata.playerX_name+gamedata.playerO_name);
+  if (gamedata.state == 1 && gamedata.playerO_name != ''){
     res.status(200).send({sucess : true});
     res.end();
   } else {
     waitplayer.res = res;
     waitplayer.session = req.session;
-    game_event.once('newplayer', function () {
+    game_event.once('newplayer-'+req.session.game_key, function () {
       var gamedata = gamecontrol.getGame(waitplayer.session.game_key);
       console.log('new player event: '+JSON.stringify(gamedata));
       if (gamedata.state == 1) waitplayer.res.status(200).send('Game started.');
-      else waitplayer.res.status(400).send('Event NewPlayer but state != 1');
+      else waitplayer.res.status(400).send('Event newplayer but state != 1');
       waitplayer.res.end();
     });
   }
