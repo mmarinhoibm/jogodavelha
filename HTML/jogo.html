@@ -26,18 +26,19 @@
       <td> <button class='gamebutton' id='c22' onclick='makeMove(this)' data-position=8 /> </td>
     </tr>
   </table>
+  <div id='messages' style='margin-botton:50px'> </div>
   <table id='players-table' style='width:100%'>
-    <tr><td> <p id='messages'></p> </td>
+    <tr id='this-payer-tr'><td> <div id='this-player-name' class='label'></div></td>
+      <td><button class='gamebutton played' id='this-player-button' disabled=true />  </td>
     </tr>
-    <tr id='this-payer-tr'><td> <p id='this-player-name' class='label'> <p> </td>
-      <td> <button class='gamebutton played' id='this-player-button' disabled=true /> </td>
-    </tr>
-    <tr id='adv-payer-tr'><td> <p id='adv-player-name' class='label'> <p> </td>
-      <td> <button class='gamebutton played' id='adv-player-button' disabled=true /> </td>
+    <tr id='adv-payer-tr'><td> <div id='adv-player-name' class='label'></div> </td>
+      <td><button class='gamebutton played' id='adv-player-button' disabled=true /></td>
     </tr>
   </table>
+  <div style='margin-top:50px'>
+    <button class='played label' style='display:none' id='reinit-button' onclick='location.assign("/index.html");'> Jogar novamente? </button>
+  </div>
 </body>
-
 <script>
 var msg = document.getElementById('messages');
 var gamedata = {};
@@ -51,14 +52,32 @@ function whenError(msg) {
   err_area.style.display='';
 };
 
+function getPlayer (){
+  ////// alert ('getPlayer');
+  var req = new XMLHttpRequest();
+  req.open('GET', '/player', true);
+  req.onload = function (e) {
+   ////alert ('getPlayer '+req.responseText);
+    if (req.status == 200){
+      player_obj = JSON.parse(req.responseText);
+      showPlayer();
+      if (player_obj.symbol == 'O') getMove();
+      //alert ('getPlayer: '+JSON.stringify(player_obj));
+    }
+    else whenError('Ocorreu um erro ao carregar o jogador. <br>'+req.responseText);
+  }
+  req.send();
+}
+
 function getMove () {
   var req = new XMLHttpRequest();
-  req.open('GET', '/move', true);
+  req.open('GET', '/waitmove', true);
   req.onload = function (e) {
     if (req.status == 200) {
       // alert('getMove: '+req.responseText);
       gamedata = JSON.parse(req.responseText);
       showBoard();
+      if (gamedata.state > 1) document.dispatchEvent(new Event('finish'));
     }
     else whenError('Ocorreu um erro na jogada realizada. <br>'+req.responseText);
   }
@@ -66,23 +85,21 @@ function getMove () {
 }
 
 function makeMove(b) {
-  // alert(elm.dataset.position);
   var req = new XMLHttpRequest();
   var move_obj = {
     symbol : player_obj.symbol,
-    pos : b.dataset.position,
+    pos : b.dataset.position
   };
-  move_obj.count = ++gamedata.count;
 
+  move_obj.count = ++gamedata.count;
   b.innerHTML = player_obj.symbol;
   b.disabled = true;
   b.classList.add('played');
-
   req.open('POST', '/move', true);
   req.setRequestHeader('Content-Type','application/json;charset=UTF-8');
+
   req.onload = function () {
     if (req.status == 200) {
-      // alert('makeMove: '+req.responseText);
       gamedata = JSON.parse(req.responseText);
       showBoard();
       if (gamedata.state > 1) document.dispatchEvent(new Event('finish'));
@@ -99,6 +116,9 @@ document.addEventListener('finish',  function(){
     if (player_obj.symbol == gamedata.winner) msg.innerHTML = 'Você venceu! <br> Jogo finalizado. Clique em Reiniciar se quiser começar outro jogo.';
     else msg.innerHTML = gamedata.winner+' venceu! <br> Jogo finalizado. Clique em Reiniciar se quiser começar outro jogo.';
   } else msg.innerHTML =  'Deu velha. Clique em Reiniciar se quiser começar outro jogo.';
+
+  var b = document.getElementById('reinit-button');
+  b.removeAttribute("style");
 });
 
 function showBoard(){
@@ -121,7 +141,8 @@ function showPlayer(){
   var b_thisplayer = document.getElementById('this-player-button');
   var advplayer = document.getElementById('adv-player-name');
   var b_advplayer = document.getElementById('adv-player-button');
-
+  //alert('show player '+gamedata.constructor);
+  //alert('show player '+JSON.stringify(player_obj));
   thisplayer.innerHTML = player_obj.player_name;
   b_thisplayer.innerHTML = player_obj.symbol;
 
@@ -135,30 +156,13 @@ function showPlayer(){
   showBoard();
 };
 
-function getPlayer (){
-  // alert ('getPlayer');
-  var req = new XMLHttpRequest();
-  req.open('GET', '/player', true);
-  req.onload = function (e) {
-    // alert ('getPlayer '+req.responseText);
-    if (req.status == 200){
-      player_obj = JSON.parse(req.responseText);
-      showPlayer();
-      getMove();
-      // alert ('getPlayer: '+JSON.stringify(player_obj));
-    }
-    else whenError('Ocorreu um erro ao carregar o jogador. <br>'+req.responseText);
-  }
-  req.send();
-}
-
 // load gamedata into variables and update all HTML Elements
 function getGamedata (){
   var req = new XMLHttpRequest();
   req.open('GET', '/gamedata', true);
   req.onload = function (e) {
     if (req.status == 200){
-      // alert('getGamedata: '+req.responseText);
+      //alert('getGamedata: '+req.responseText);
       gamedata = JSON.parse(req.responseText);
       getPlayer();
     }
@@ -168,6 +172,5 @@ function getGamedata (){
 }
 msg.innerHTML = 'Carregando o jogo...';
 getGamedata();
-
 </script>
 </html>

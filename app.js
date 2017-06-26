@@ -6,58 +6,48 @@ var gamecontrol = require('./game-control.js');
 
 var waitplayer = {};
 var waitmove = {};
-var game_event = new EventEmitter();
+var new_player_event = new EventEmitter();
+var new_move_event = new EventEmitter();
 var port = (process.env.PORT || 3000);
 var app = express();
 
 app.use(bodyParser.urlencoded({extended : false}));
 app.use(bodyParser.json());
 app.use(sessions({ secret : 'this should not be here', resave : true, saveUninitialized : true}));
+app.use(function (req,res,next){ console.log(req.method+req.url+'\n'+req.session.game_key+'\n'+JSON.stringify(req.body));next();});
 
+app.get('/', express.static('HTML/index.html'));
 // receive a move from a player
 app.post('/move', function (req,res){
-  console.log('move: '+ req.body.pos+req.body.symbol+req.body.count);
   var move_obj = gamecontrol.move({
     game_key : req.session.game_key,
     pos : req.body.pos,
     count : req.body.count,
     symbol : req.body.symbol
   });
+  var gamedata = gamecontrol.getGame(req.session.game_key);
   console.log('move RES: '+JSON.stringify(move_obj));
-
-  res.append('Content-Type', 'application/json');
   if (move_obj.success) {
-    res.status(200).send(JSON.stringify(gamecontrol.getGame(req.session.game_key)));
-    game_event.emit('move-'+req.session.game_key);
-  } else res.status(400).send(move_obj);
-  res.end();
+    res.status(200).json(gamedata);
+    new_move_event.emit('move'+req.session.game_key);
+  } else res.status(400).json(move_obj);
 });
 
 // wait for a new move and return game data
-app.get('/move', function (req,res){
+app.get('/waitmove', function (req,res){
   waitmove.res = res;
-  waitmove.session = req.session;
-  game_event.once('move-'+req.session.game_key, function () {
-    console.log('GET move res: '+JSON.stringify(waitmove.session.game_key));
-    waitmove.res.append('Content-Type', 'application/json');
-    waitmove.res.status(200).send(JSON.stringify(gamecontrol.getGame(waitmove.session.game_key)));
-    waitmove.res.end();
+  waitmove.game_key = req.session.game_key;
+  new_move_event.once('move'+waitmove.game_key, function () {
+    var gamedata_obj = gamecontrol.getGame(waitmove.game_key);
+    waitmove.res.json(gamedata_obj);
   });
 });
 
 // return game data after last move
 // if param=true reset the game (clean players, moves, etc)
 app.get('/gamedata', function (req,res){
-  console.log(req.query.reset);
-  if (req.query.reset == 'true'){
-    gamecontrol.newGame();
-    game_event.removeAllListeners();
-  }
-  res.append('Content-Type', 'application/json');
-  var json_str = JSON.stringify(gamecontrol.getGame(req.session.game_key));
-  console.log(json_str);
-  res.status(200).send(json_str);
-  res.end();
+  if (req.query.reset == 'true') gamecontrol.newGame();
+  res.status(200).json(gamecontrol.getGame(req.session.game_key));
 });
 
 app.get('/player', function (req,res){
@@ -66,22 +56,19 @@ app.get('/player', function (req,res){
     player_name:req.session.player_name
   };
   console.log('GET player '+JSON.stringify(json_res));
-  res.status(200).send(json_res);
-  res.end();
+  res.status(200).json(json_res);
 });
 
 // join the game as a new player
 app.post('/player',function (req,res){
-  console.log('POST player: '+req.body.player_name);
   var json_res = gamecontrol.newPlayer({ name : req.body.player_name });
   if (json_res.success) {
     req.session.game_key = json_res.game_key;
     req.session.symbol = json_res.symbol;
     req.session.player_name = req.body.player_name;
-    game_event.emit('newplayer-'+json_res.game_key);
-    res.status(200).send(json_res);
-  } else res.status(400).send(json_res); // send error
-  res.end();
+    new_player_event.emit('newplayer-'+json_res.game_key);
+    res.status(200).json(json_res);
+  } else res.status(400).json(json_res);
 });
 
 // wait for other player to join the game
@@ -89,17 +76,15 @@ app.get('/waitplayer', function (req,res){
   var gamedata = gamecontrol.getGame(req.session.game_key);
   console.log('wait player: '+gamedata.playerX_name+gamedata.playerO_name);
   if (gamedata.state == 1 && gamedata.playerO_name != ''){
-    res.status(200).send({sucess : true});
-    res.end();
+    res.status(200).json({success : true});
   } else {
     waitplayer.res = res;
     waitplayer.session = req.session;
-    game_event.once('newplayer-'+req.session.game_key, function () {
+    new_player_event.once('newplayer-'+req.session.game_key, function () {
       var gamedata = gamecontrol.getGame(waitplayer.session.game_key);
       console.log('new player event: '+JSON.stringify(gamedata));
-      if (gamedata.state == 1) waitplayer.res.status(200).send('Game started.');
-      else waitplayer.res.status(400).send('Event newplayer but state != 1');
-      waitplayer.res.end();
+      if (gamedata.state == 1) waitplayer.res.status(200).json({sucess : true});
+      else waitplayer.res.status(400).json({sucess:false, message :'Event newplayer but state = '+gamedata.state });
     });
   }
 });
