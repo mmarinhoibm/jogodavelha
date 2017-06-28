@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <link rel='stylesheet' type='text/css' href='css/m3.css'>
+</head>
+<body class='centered'>
+  <span id='error-message-area' style='display:none;'>
+    <button id='error-message' class='error-message' onclick='location.reload();'>Error:</button>
+  </span>
+  <p class='title'> Bem vindo ao <br>    Jogo da Velha! </p>
+  <p class='label'>Qual seu nome?</p>
+  <input type=text id='player-name' style='text-align:center;font-size:150%;' onkeyup='this.value=this.value.toUpperCase();' onchange='newPlayer();'/>
+  <p id='player-msg' class='small-label' style='display:none;'> Você será o jogador:
+    <button id='player-button' class='gamebutton control' onclick='location.assign("jogo.html");' disabled='true'> </button><br>
+  </p>
+</body>
+<script>
+
+function showPlayer(p){
+  var msg = document.getElementById('player-msg');
+  var b = document.getElementById('player-button');
+  b.appendChild(document.createTextNode(p));
+  msg.style.display='';
+}
+
+function whenError(msg) {
+  var err_area = document.getElementById('error-message-area');
+  var err_msg = document.getElementById('error-message');
+  err_msg.innerHTML = '<b>'+msg+'</b><br>Clique para tentar novamente';
+  err_area.style.display='';
+}
+
+function waitPlayer() {
+  var req = new XMLHttpRequest();
+  req.open('GET', '/waitplayer', true);
+  req.onload = function (e) {
+    if (req.status == 200) {
+      var msg = document.getElementById('player-msg');
+      var b = document.getElementById('player-button');
+      b.disabled = false;
+      msg.appendChild(document.createTextNode('O outro jogador está pronto. Clique no botão para iniciar o jogo.'));
+    } else {
+      console.error(req.statusText);
+      whenError('Ocorreu um erro ao esperar o próximo jogador. <br>'+req.statusText);
+    }
+  };
+
+  req.onerror = function (e) {
+    whenError('Ocorreu um erro ao esperar o próximo jogador. <br>'+req.statusText);
+  };
+  req.send();
+};
+
+function newPlayer() {
+  var player_name = document.getElementById('player-name');
+  var json_req = { 'player_name' : player_name.value };
+  var req = new XMLHttpRequest();
+  player_name.disabled = true;
+
+  req.open('POST', '/player', true);
+
+  req.onload = function (e) {
+    if (req.status == 200) {
+      var newplayer_obj = JSON.parse(req.responseText);
+      showPlayer(newplayer_obj.symbol);
+      waitPlayer();
+    } else whenError('Ocorreu um erro se juntar ao jogo. <br>'+json_newplayer.message);
+  };
+  req.onerror = function (e) {
+    whenError('Ocorreu um erro se juntar ao jogo. <br>'+req.responseText);
+  };
+  req.setRequestHeader('Content-Type','application/json;charset=UTF-8');
+  req.send(JSON.stringify(json_req));
+}
+</script>
+</html>

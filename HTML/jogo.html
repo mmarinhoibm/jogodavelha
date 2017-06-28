@@ -53,16 +53,13 @@ function whenError(msg) {
 };
 
 function getPlayer (){
-  ////// alert ('getPlayer');
   var req = new XMLHttpRequest();
   req.open('GET', '/player', true);
   req.onload = function (e) {
-   ////alert ('getPlayer '+req.responseText);
     if (req.status == 200){
       player_obj = JSON.parse(req.responseText);
       showPlayer();
       if (player_obj.symbol == 'O') getMove();
-      //alert ('getPlayer: '+JSON.stringify(player_obj));
     }
     else whenError('Ocorreu um erro ao carregar o jogador. <br>'+req.responseText);
   }
@@ -74,7 +71,6 @@ function getMove () {
   req.open('GET', '/waitmove', true);
   req.onload = function (e) {
     if (req.status == 200) {
-      // alert('getMove: '+req.responseText);
       gamedata = JSON.parse(req.responseText);
       showBoard();
       if (gamedata.state > 1) document.dispatchEvent(new Event('finish'));
@@ -141,8 +137,7 @@ function showPlayer(){
   var b_thisplayer = document.getElementById('this-player-button');
   var advplayer = document.getElementById('adv-player-name');
   var b_advplayer = document.getElementById('adv-player-button');
-  //alert('show player '+gamedata.constructor);
-  //alert('show player '+JSON.stringify(player_obj));
+
   thisplayer.innerHTML = player_obj.player_name;
   b_thisplayer.innerHTML = player_obj.symbol;
 
@@ -162,7 +157,6 @@ function getGamedata (){
   req.open('GET', '/gamedata', true);
   req.onload = function (e) {
     if (req.status == 200){
-      //alert('getGamedata: '+req.responseText);
       gamedata = JSON.parse(req.responseText);
       getPlayer();
     }

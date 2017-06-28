@@ -41,6 +41,7 @@ exports.newPlayer = function (player){
     newplayer.game_key = pre_game.game_key;
     newplayer.symbol = 'X';
     newplayer.state = pre_game.state;
+    newplayer.player_name = player.name;
   } else if (player.name == pre_game.playerX_name) {
     newplayer.sucess = false;
     newplayer.message = 'The 2 players cannot have the same name. Choose another.';
@@ -50,6 +51,7 @@ exports.newPlayer = function (player){
     pre_game.state = 1; // state=1: ready to play
     newplayer.state = pre_game.state;
     newplayer.symbol = 'O';
+    newplayer.player_name = player.name;
     pre_game = false;
   }
   return newplayer;

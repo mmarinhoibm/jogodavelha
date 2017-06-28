@@ -35,10 +35,14 @@
 }
 
 button.control {
-  color:white;
-  background:black;
-  font-size: 32px;
-  padding: 16px 16px;
+  color : white;
+  background : black;
+  font-size : 32px;
+  padding : 16px 16px;
+}
+
+button.control_disabled {
+  background: gray;
 }
 
 button.played {
@@ -85,4 +89,9 @@ td.borderlines {
 
 tr.player {
   background : #e4d69f;
+}
+
+input.player-name {
+  text-align:center;
+  font-size:150%;
 }
