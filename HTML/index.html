@@ -29,7 +29,7 @@ player.onNewPlayer = function (){
   this.waitNextPlayer();
 }
 
-player.onerror = function (msg){
+player.onPlayerError = function (msg){
   var err_area = document.getElementById('error-message-area');
   var err_msg = document.getElementById('error-message');
   err_msg.innerHTML = '<b>'+msg+'</b><br>Clique para tentar novamente';

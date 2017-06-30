@@ -41,7 +41,7 @@ function Game(){
     console.log('onNewMove');
   }
 
-  this.newMove = function (player_name){
+  this.newMove = function (move){
     var req = new XMLHttpRequest();
     req.open('POST', '/move', true);
     req.onerror = function (e) { self.onMoveError(e) };
@@ -49,10 +49,10 @@ function Game(){
       if (req.status == 200) {
         self.gamedata = JSON.parse(req.responseText);
         self.onNewMove();
-      } else self.onMoveError (e);
+      } else self.onMoveError (req.responseText);
     }
     req.setRequestHeader('Content-Type','application/json;charset=UTF-8');
-    req.send(JSON.stringify({ 'player_name' : player_name }));
+    req.send(JSON.stringify(move));
   }
 }
 
@@ -108,7 +108,7 @@ function Player (){
         self.player_name = newplayer.player_name;
         self.symbol = newplayer.symbol;
         self.onNewPlayer();
-      } else self.onPlayerError (e);
+      } else self.onPlayerError (req.responseText);
     }
     req.setRequestHeader('Content-Type','application/json;charset=UTF-8');
     req.send(JSON.stringify({ 'player_name' : name }));

@@ -39,10 +39,11 @@
     <button class='played label' style='display:none' id='reinit-button' onclick='location.assign("/index.html");'> Jogar novamente? </button>
   </div>
 </body>
+<script src="scripts/rest-helper.js"></script>
 <script>
 var msg = document.getElementById('messages');
-var gamedata = {};
-var player_obj = {};
+var player = new Player();
+var game = new Game();
 
 function whenError(msg) {
   console.log(msg);
@@ -51,66 +52,38 @@ function whenError(msg) {
   err_msg.innerHTML = '<b>'+msg+'</b><br>Clique para tentar novamente';
   err_area.style.display='';
 };
-
-function getPlayer (){
-  var req = new XMLHttpRequest();
-  req.open('GET', '/player', true);
-  req.onload = function (e) {
-    if (req.status == 200){
-      player_obj = JSON.parse(req.responseText);
-      showPlayer();
-      if (player_obj.symbol == 'O') getMove();
-    }
-    else whenError('Ocorreu um erro ao carregar o jogador. <br>'+req.responseText);
-  }
-  req.send();
-}
-
-function getMove () {
-  var req = new XMLHttpRequest();
-  req.open('GET', '/waitmove', true);
-  req.onload = function (e) {
-    if (req.status == 200) {
-      gamedata = JSON.parse(req.responseText);
-      showBoard();
-      if (gamedata.state > 1) document.dispatchEvent(new Event('finish'));
-    }
-    else whenError('Ocorreu um erro na jogada realizada. <br>'+req.responseText);
-  }
-  req.send();
+game.onMoveError = function (msg){
+  whenError(msg);
 }
 
 function makeMove(b) {
-  var req = new XMLHttpRequest();
   var move_obj = {
-    symbol : player_obj.symbol,
+    symbol : player.symbol,
     pos : b.dataset.position
   };
-
-  move_obj.count = ++gamedata.count;
-  b.innerHTML = player_obj.symbol;
+  move_obj.count = ++game.gamedata.count;
+  b.innerHTML = player.symbol;
   b.disabled = true;
   b.classList.add('played');
-  req.open('POST', '/move', true);
-  req.setRequestHeader('Content-Type','application/json;charset=UTF-8');
+  game.newMove(move_obj);
+}
 
-  req.onload = function () {
-    if (req.status == 200) {
-      gamedata = JSON.parse(req.responseText);
-      showBoard();
-      if (gamedata.state > 1) document.dispatchEvent(new Event('finish'));
-      else getMove();
-    } else whenError('Ocorreu um erro nesta jogada. <br>'+req.responseText);
-  }
-  req.send(JSON.stringify(move_obj));
+game.onNewMove = function (){
+  showBoard();
+  if (game.gamedata.state > 1) document.dispatchEvent(new Event('finish'));
+  else game.waitNextMove();
+}
+game.onNextMove = function (){
+  showBoard();
+  if (game.gamedata.state > 1) document.dispatchEvent(new Event('finish'));
 }
 
 document.addEventListener('finish',  function(){
   buttons = document.getElementsByClassName('gamebutton');
   for (var i = 0; i < buttons.length; i++) buttons[i].disabled = true;
-  if (gamedata.state == 2){
-    if (player_obj.symbol == gamedata.winner) msg.innerHTML = 'Você venceu! <br> Jogo finalizado. Clique em Reiniciar se quiser começar outro jogo.';
-    else msg.innerHTML = gamedata.winner+' venceu! <br> Jogo finalizado. Clique em Reiniciar se quiser começar outro jogo.';
+  if (game.gamedata.state == 2){
+    if (player.symbol == game.gamedata.winner) msg.innerHTML = 'Você venceu! <br> Jogo finalizado. Clique em Reiniciar se quiser começar outro jogo.';
+    else msg.innerHTML = game.gamedata.winner+' venceu! <br> Jogo finalizado. Clique em Reiniciar se quiser começar outro jogo.';
   } else msg.innerHTML =  'Deu velha. Clique em Reiniciar se quiser começar outro jogo.';
 
   var b = document.getElementById('reinit-button');
@@ -118,7 +91,8 @@ document.addEventListener('finish',  function(){
 });
 
 function showBoard(){
-  var not_my_turn = (gamedata.next != player_obj.symbol);
+  var gamedata = game.gamedata;
+  var not_my_turn = (gamedata.next != player.symbol);
   var buttons = document.getElementsByClassName('gamebutton');
   for (i = 0; i < buttons.length; i++)
   if (buttons[i].dataset.position != undefined) {
@@ -132,39 +106,31 @@ function showBoard(){
   else  msg.innerHTML = 'Agora é sua vez.';
 }
 
-function showPlayer(){
+player.onloadPlayer = function (){
   var thisplayer = document.getElementById('this-player-name');
   var b_thisplayer = document.getElementById('this-player-button');
   var advplayer = document.getElementById('adv-player-name');
   var b_advplayer = document.getElementById('adv-player-button');
+  thisplayer.innerHTML = this.player_name;
+  b_thisplayer.innerHTML = this.symbol;
 
-  thisplayer.innerHTML = player_obj.player_name;
-  b_thisplayer.innerHTML = player_obj.symbol;
-
-  if (player_obj.symbol == 'X'){
-    advplayer.innerHTML = gamedata.playerO_name;
+  if (this.symbol == 'X'){
+    advplayer.innerHTML = game.gamedata.playerO_name;
     b_advplayer.innerHTML = 'O';
   } else {
-    advplayer.innerHTML = gamedata.playerX_name;
+    advplayer.innerHTML = game.gamedata.playerX_name;
     b_advplayer.innerHTML = 'X';
+    game.waitNextMove();
   }
   showBoard();
 };
 
 // load gamedata into variables and update all HTML Elements
-function getGamedata (){
-  var req = new XMLHttpRequest();
-  req.open('GET', '/gamedata', true);
-  req.onload = function (e) {
-    if (req.status == 200){
-      gamedata = JSON.parse(req.responseText);
-      getPlayer();
-    }
-    else whenError('Ocorreu um erro se juntar ao jogo. <br>'+req.responseText);
-  }
-  req.send();
+game.onloadGame = function (){
+  player.loadPlayer();
 }
+
 msg.innerHTML = 'Carregando o jogo...';
-getGamedata();
+game.loadGame();
 </script>
 </html>
