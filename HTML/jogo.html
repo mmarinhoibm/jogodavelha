@@ -70,12 +70,9 @@ function makeMove(b) {
 
 game.onNewMove = function (){
   showBoard();
-  if (game.gamedata.state > 1) document.dispatchEvent(new Event('finish'));
-  else game.waitNextMove();
 }
 game.onNextMove = function (){
   showBoard();
-  if (game.gamedata.state > 1) document.dispatchEvent(new Event('finish'));
 }
 
 document.addEventListener('finish',  function(){
@@ -102,8 +99,11 @@ function showBoard(){
       buttons[i].disabled = true;
     } else buttons[i].disabled = not_my_turn;
   }
-  if (not_my_turn) msg.innerHTML = 'Aguarde a jogada do seu adversário.';
-  else  msg.innerHTML = 'Agora é sua vez.';
+  if (game.gamedata.state > 1) document.dispatchEvent(new Event('finish'));
+  else if (not_my_turn){
+    msg.innerHTML = 'Aguarde a jogada do seu adversário.';
+    game.waitNextMove();
+  } else  msg.innerHTML = 'Agora é sua vez.';
 }
 
 player.onloadPlayer = function (){
@@ -120,7 +120,6 @@ player.onloadPlayer = function (){
   } else {
     advplayer.innerHTML = game.gamedata.playerX_name;
     b_advplayer.innerHTML = 'X';
-    game.waitNextMove();
   }
   showBoard();
 };
@@ -132,5 +131,6 @@ game.onloadGame = function (){
 
 msg.innerHTML = 'Carregando o jogo...';
 game.loadGame();
+
 </script>
 </html>
