@@ -4,6 +4,8 @@ var bodyParser = require('body-parser');
 var EventEmitter = require('events').EventEmitter;
 var gamecontrol = require('./game-control.js');
 
+var start_time = new Date().getTime();
+var ops = ['Server started: '+start_time];
 var waitplayer = {};
 var waitmove = {};
 var new_player_event = new EventEmitter();
@@ -14,10 +16,19 @@ var app = express();
 app.use(bodyParser.urlencoded({extended : false}));
 app.use(bodyParser.json());
 app.use(sessions({ secret : 'this should not be here', resave : true, saveUninitialized : true}));
-app.use(function (req,res,next){ console.log(req.method+req.url+'\n'+req.session.game_key+'\n'+JSON.stringify(req.body));next();});
+app.use(function (req,res,next){
+  console.log(req.method+req.url+'\n'+req.session.game_key+'\n'+JSON.stringify(req.body));
+  ops.push(((new Date().getTime())-start_time)+' - BEGIN: '+req.method+' '+req.url+' '+req.session.game_key);
+  next();
+});
+
 
 app.get('/', express.static('HTML/index.html'));
 // receive a move from a player
+
+app.get('/logs', function (req,res) {
+  res.status(200).send('<html><body>'+ops.join('<br>')+'</body></html>');
+});
 app.post('/move', function (req,res){
   var move_obj = gamecontrol.move({
     game_key : req.session.game_key,
@@ -31,6 +42,7 @@ app.post('/move', function (req,res){
     res.status(200).json(gamedata);
     new_move_event.emit('move'+req.session.game_key);
   } else res.status(400).json(move_obj);
+  ops.push(((new Date().getTime())-start_time)+' - '+req.method+' - '+req.url+' - '+req.session.game_key);
 });
 
 // wait for a new move and return game data
@@ -40,6 +52,7 @@ app.get('/waitmove', function (req,res){
   new_move_event.once('move'+waitmove.game_key, function () {
     var gamedata_obj = gamecontrol.getGame(waitmove.game_key);
     waitmove.res.json(gamedata_obj);
+    ops.push(((new Date().getTime())-start_time)+' - '+req.method+' - '+req.url+' - '+req.session.game_key);
   });
 });
 
@@ -48,6 +61,7 @@ app.get('/waitmove', function (req,res){
 app.get('/gamedata', function (req,res){
   if (req.query.reset == 'true') gamecontrol.newGame();
   res.status(200).json(gamecontrol.getGame(req.session.game_key));
+  ops.push(((new Date().getTime())-start_time)+' - '+req.method+' - '+req.url+' - '+req.session.game_key);
 });
 
 app.get('/player', function (req,res){
@@ -57,6 +71,7 @@ app.get('/player', function (req,res){
   };
   console.log('GET player '+JSON.stringify(json_res));
   res.status(200).json(json_res);
+  ops.push(((new Date().getTime())-start_time)+' - '+req.method+' - '+req.url+' - '+req.session.game_key);
 });
 
 // join the game as a new player
@@ -69,6 +84,7 @@ app.post('/player',function (req,res){
     new_player_event.emit('newplayer-'+json_res.game_key);
     res.status(200).json(json_res);
   } else res.status(400).json(json_res);
+  ops.push(((new Date().getTime())-start_time)+' - '+req.method+' - '+req.url+' - '+req.session.game_key);
 });
 
 // wait for other player to join the game
@@ -77,6 +93,7 @@ app.get('/waitplayer', function (req,res){
   console.log('wait player: '+gamedata.playerX_name+gamedata.playerO_name);
   if (gamedata.state == 1 && gamedata.playerO_name != ''){
     res.status(200).json({success : true});
+    ops.push(((new Date().getTime())-start_time)+' - '+req.method+' - '+req.url+' - '+req.session.game_key);
   } else {
     waitplayer.res = res;
     waitplayer.session = req.session;
@@ -85,6 +102,7 @@ app.get('/waitplayer', function (req,res){
       console.log('new player event: '+JSON.stringify(gamedata));
       if (gamedata.state == 1) waitplayer.res.status(200).json({sucess : true});
       else waitplayer.res.status(400).json({sucess:false, message :'Event newplayer but state = '+gamedata.state });
+      ops.push(((new Date().getTime())-start_time)+' - '+req.method+' - '+req.url+' - '+req.session.game_key);
     });
   }
 });
