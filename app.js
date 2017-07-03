@@ -65,10 +65,8 @@ app.get('/gamedata', function (req,res){
 });
 
 app.get('/player', function (req,res){
-  var json_res = {
-    symbol: req.session.symbol,
-    player_name:req.session.player_name
-  };
+  var json_res = { player_name:req.session.player_name  };
+  if (req.query.nameonly != 'true') json_res.symbol = req.session.symbol;
   console.log('GET player '+JSON.stringify(json_res));
   res.status(200).json(json_res);
   ops.push(((new Date().getTime())-start_time)+' - '+req.method+' - '+req.url+' - '+req.session.game_key);

@@ -64,9 +64,11 @@ function Player (){
   this.onPlayerError = function (e){  console.log('Player error: '+e);  }
   this.onloadPlayer = function () { console.log(player_name + ' ' + symbol);}
 
-  this.loadPlayer = function () {
+  this.loadPlayer = function (nameonly) {
+    var param = '';
+    if (nameonly) param = '?nameonly=true'
     var req = new XMLHttpRequest();
-    req.open('GET', '/player', true);
+    req.open('GET', '/player'+param, true);
     req.onerror = function (e) { self.onPlayerError(e) };
     req.onload = function (e) {
       if (req.status == 200) {
